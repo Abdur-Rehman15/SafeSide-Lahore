@@ -32,7 +32,9 @@ export const AuthProvider = ({ children }) => {
       });
       return true;
     } catch (error) {
-      console.log('Error is: ', error);
+      console.error('Login error: ', error);
+      console.error('Error response: ', error.response?.data);
+      console.error('Request URL was: ', `${USER_URL}/login`);
       return false;
     } finally {
       setLoading(false);
@@ -51,11 +53,13 @@ export const AuthProvider = ({ children }) => {
       );
       return true;
     } catch (err) {
-      console.log('Error during signup: ', err);
+      console.error('Error during signup: ', err);
+      console.error('Error response: ', err.response?.data);
+      console.error('Request URL was: ', `${USER_URL}/register`);
+      return false;
     } finally {
       setLoading(false);
     }
-
   }
 
   const logout = () => {

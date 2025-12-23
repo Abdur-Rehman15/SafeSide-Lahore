@@ -16,17 +16,20 @@ dotenv.config();
 
 const app = express();
 
+// Normalize FRONTEND_URL to remove trailing slash for CORS matching
+const FRONTEND_URL = process.env.FRONTEND_URL?.replace(/\/$/, '') || 'http://localhost:5173';
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: FRONTEND_URL,
     methods: ["GET", "POST"],
   }
 });
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: FRONTEND_URL,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 }));
@@ -62,4 +65,5 @@ app.get(/^\/(?!user|report).*/, (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const HOST = process.env.HOST || '0.0.0.0';
+server.listen(PORT, HOST, () => console.log(`Server running on http://${HOST}:${PORT}`));
