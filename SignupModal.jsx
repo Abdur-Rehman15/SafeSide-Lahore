@@ -1,0 +1,154 @@
+import React, { useState } from 'react';
+import { Dialog, TextField, Button, DialogTitle, DialogContent, MenuItem, CircularProgress } from '@mui/material';
+import { useAuth } from './AuthContext';
+import { useNavigate } from 'react-router-dom';
+
+export default function SignupModal() {
+  const { register, login, activeModal, setActiveModal } = useAuth(); 
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    username: '',
+    firstName: '',
+    lastName: '',
+    gender: '',
+    email: '',
+    password: '',
+    emergencyNumber: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // 1️⃣ Register the user
+      const response = await register(formData);
+
+      if (response) {
+        // 2️⃣ Automatically log in the user
+        const loginResponse = await login({
+          email: formData.email,
+          password: formData.password
+        });
+
+        if (loginResponse) {
+          setActiveModal(null);       // Close modal
+          navigate('/home');          // Redirect to home page
+        } else {
+          setError('Registration succeeded, but login failed');
+        }
+      } else {
+        setError('Registration failed');
+      }
+    } catch (err) {
+      setError('An error occurred during registration');
+      console.log('Signup error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={activeModal === 'signup'} onClose={() => setActiveModal(null)}>
+      <DialogTitle>Sign Up</DialogTitle>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Username"
+            name="username"
+            value={formData.username}
+            onChange={(e) => setFormData({...formData, username: e.target.value})}
+            required
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="First Name"
+            name="firstName"
+            value={formData.firstName}
+            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+            required
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Last Name"
+            name="lastName"
+            value={formData.lastName}
+            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+            required
+          />
+          <TextField
+            select
+            fullWidth
+            margin="normal"
+            label="Gender"
+            name="gender"
+            value={formData.gender}
+            onChange={(e) => setFormData({...formData, gender: e.target.value})}
+            required
+          >
+            <MenuItem value="male">Male</MenuItem>
+            <MenuItem value="female">Female</MenuItem>
+          </TextField>
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            required
+          />
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Password"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            required
+          />
+
+          <TextField
+            fullWidth
+            margin="normal"
+            label="Emergency Number"
+            name="emergencyNumber"
+            type="text"
+            value={formData.emergencyNumber}
+            onChange={(e) => {
+              // Only allow digits and max 11 characters
+              const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+              setFormData({ ...formData, emergencyNumber: val });
+            }}
+            required
+            inputProps={{ maxLength: 11 }}
+            helperText="Number to be contacted in case of emergency"
+          />
+          
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            disabled={loading}
+            sx={{ mt: 2 }}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Sign Up'}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
