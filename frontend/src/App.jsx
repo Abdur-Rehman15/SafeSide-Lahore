@@ -1,18 +1,29 @@
+import Login from './components/Login';
+import Signup from './components/Signup';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './components/AuthContext';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import DashboardLayout from './components/DashboardLayout';
 import ProtectedRoute from './components/ProtectedRoute';
-import Profile from './pages/Profile'
+import Profile from './pages/Profile';
 import CrimeReportForm from './components/CrimeReportForm';
 import LocationReview from './components/LocationReview';
-import SafeRouteMap from './components/SafeRouteMap'
+import SafeRouteMap from './components/SafeRouteMap';
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <LandingPage />,
+  },
+  
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
   },
   {
     element: <ProtectedRoute />,
