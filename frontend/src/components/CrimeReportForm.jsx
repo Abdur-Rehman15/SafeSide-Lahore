@@ -142,7 +142,7 @@ export default function CrimeReportForm() {
     { value: 'theft', label: 'Theft' },
     { value: 'robbery', label: 'Robbery' },
     { value: 'harassment', label: 'Harassment' },
-    { value: 'other', label: 'Other' }
+    { value: 'other', label: 'Suspicious' }
   ];
 
   if (success) {
@@ -318,7 +318,7 @@ export default function CrimeReportForm() {
 
               <Box sx={{ mb: 3, flex: 1 }}>
                 <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                  Details (Optional)
+                  What happened? Describe in detail so other users can stay alert!
                 </Typography>
                 <TextField
                   fullWidth

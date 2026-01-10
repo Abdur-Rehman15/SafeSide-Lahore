@@ -197,7 +197,7 @@ export default function DashboardLayout() {
               }}
             >
               SafeSide <span style={{ background: 'linear-gradient(45deg, #ff9f43, #ffa726)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                Pakistan
+                Lahore
               </span>
             </Typography>
           </Box>

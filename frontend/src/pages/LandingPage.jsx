@@ -242,7 +242,7 @@ const LandingPage = () => {
           </div>
         </div>
         <div className="footer-copyright">
-          © {new Date().getFullYear()} SafeSide Pakistan. All rights reserved.
+          © {new Date().getFullYear()} SafeSide Lahore. All rights reserved.
         </div>
       </footer>
     </div>

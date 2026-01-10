@@ -1955,14 +1955,16 @@ const calculateCentroid = (zones) => {
       alignItems: 'center',
       justifyContent: 'center',
       background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-      p: { xs: 2, sm: 3 }
+      p: { xs: 1.5, sm: 2 }
     }}>
       <Paper 
         elevation={0} 
         sx={{ 
-          p: { xs: 3, md: 4 },
+          p: { xs: 2, md: 2.5 },
           maxWidth: 500,
           width: '100%',
+          maxHeight: '95vh',
+          overflowY: 'auto',
           borderRadius: 3,
           background: 'white',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
@@ -1974,22 +1976,22 @@ const calculateCentroid = (zones) => {
             top: 0,
             left: 0,
             right: 0,
-            height: 6,
+            height: 4,
             background: 'linear-gradient(90deg, #5e35b1 0%, #3949ab 100%)'
           }
         }}
       >
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 1.5 }}>
           <Box sx={{
             display: 'inline-flex',
-            p: 2,
+            p: 1,
             borderRadius: '50%',
             background: 'rgba(94, 53, 177, 0.1)',
-            mb: 2
+            mb: 1
           }}>
             <LocationIcon 
               sx={{ 
-                fontSize: 40,
+                fontSize: 28,
                 color: 'primary.main'
               }} 
             />
@@ -1998,9 +2000,10 @@ const calculateCentroid = (zones) => {
             variant="h5" 
             gutterBottom 
             sx={{ 
-              mb: 1,
+              mb: 0.5,
               fontWeight: 700,
-              color: 'text.primary'
+              color: 'text.primary',
+              fontSize: { xs: '1.3rem', sm: '1.4rem' }
             }}
           >
             Plan Your Safe Route
@@ -2010,36 +2013,77 @@ const calculateCentroid = (zones) => {
             sx={{ 
               color: 'text.secondary',
               maxWidth: 400,
-              mx: 'auto'
+              mx: 'auto',
+              mb: 1.5,
+              fontSize: '0.85rem'
             }}
           >
             Enter your destination to find the safest travel path
           </Typography>
+          
+          {/* Important Notice */}
+          <Box sx={{
+            mt: 1.5,
+            p: 1.2,
+            borderRadius: 1.5,
+            backgroundColor: '#FFF3CD',
+            border: '1.5px solid #FFC107',
+            maxWidth: 450,
+            mx: 'auto'
+          }}>
+            <Typography 
+              variant="subtitle2" 
+              sx={{ 
+                fontWeight: 700,
+                color: '#856404',
+                mb: 0.5,
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5
+              }}
+            >
+              <WarningIcon sx={{ fontSize: '0.9rem' }} />
+              Important Notice
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: '#856404',
+                fontSize: '0.7rem',
+                lineHeight: 1.4,
+                display: 'block'
+              }}
+            >
+              SafeSide provides route suggestions based on available and reported safety data. While we strive to keep this information updated and reliable, safety conditions may change at any time. Users are advised to use their own judgment while traveling. SafeSide does not guarantee absolute safety and is not liable for incidents occurring during travel.
+            </Typography>
+          </Box>
         </Box>
 
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 1.5 }}>
           <Typography 
             variant="subtitle2" 
             sx={{ 
-              mb: 1.5,
+              mb: 0.75,
               display: 'flex',
               alignItems: 'center',
               color: 'text.primary',
-              fontWeight: 600
+              fontWeight: 600,
+              fontSize: '0.85rem'
             }}
           >
             <Box 
               sx={{
-                width: 24,
-                height: 24,
+                width: 20,
+                height: 20,
                 borderRadius: '50%',
                 background: 'primary.main',
                 color: 'white',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                mr: 1.5,
-                fontSize: 14,
+                mr: 1,
+                fontSize: 11,
                 fontWeight: 700
               }}
             >
@@ -2056,15 +2100,17 @@ const calculateCentroid = (zones) => {
               <TextField
                 fullWidth
                 variant="outlined"
+                size="small"
                 placeholder="Where are you going?"
                 inputRef={inputRef}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LocationIcon color="primary" />
+                      <LocationIcon color="primary" sx={{ fontSize: '1.1rem' }} />
                     </InputAdornment>
                   ),
                   sx: {
+                    fontSize: '0.9rem',
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: 'rgba(0, 0, 0, 0.1)'
                     },
@@ -2086,43 +2132,44 @@ const calculateCentroid = (zones) => {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
-              p: 2,
+              p: 1.5,
               border: '1px solid rgba(0, 0, 0, 0.1)',
               borderRadius: 2,
               background: 'white',
-              minHeight: 56
+              minHeight: 48
             }}>
-              <CircularProgress size={20} sx={{ mr: 1.5 }} />
-              <Typography variant="body2" color="text.secondary">
+              <CircularProgress size={18} sx={{ mr: 1 }} />
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
                 Loading search...
               </Typography>
             </Box>
           )}
         </Box>
 
-        <Box sx={{ mb: 4 }}>
+        <Box sx={{ mb: 1.5 }}>
           <Typography 
             variant="subtitle2" 
             sx={{ 
-              mb: 1.5,
+              mb: 0.75,
               display: 'flex',
               alignItems: 'center',
               color: 'text.primary',
-              fontWeight: 600
+              fontWeight: 600,
+              fontSize: '0.85rem'
             }}
           >
             <Box 
               sx={{
-                width: 24,
-                height: 24,
+                width: 20,
+                height: 20,
                 borderRadius: '50%',
                 background: 'primary.main',
                 color: 'white',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                mr: 1.5,
-                fontSize: 14,
+                mr: 1,
+                fontSize: 11,
                 fontWeight: 700
               }}
             >
@@ -2130,18 +2177,19 @@ const calculateCentroid = (zones) => {
             </Box>
             Travel Mode
           </Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={1}>
             <Grid item xs={6}>
               <Button
                 fullWidth
                 variant={travelMode === 'driving' ? 'contained' : 'outlined'}
-                startIcon={<DriveIcon />}
+                startIcon={<DriveIcon sx={{ fontSize: '1rem' }} />}
                 onClick={() => setTravelMode('driving')}
                 sx={{
-                  py: 1.5,
+                  py: 1,
                   borderRadius: 2,
                   borderColor: travelMode === 'driving' ? 'primary.main' : 'grey.300',
                   fontWeight: 600,
+                  fontSize: '0.85rem',
                   color: travelMode === 'driving' ? 'white' : 'text.primary',
                   bgcolor: travelMode === 'driving' ? 'primary.main' : 'transparent',
                   '&:hover': {
@@ -2157,13 +2205,14 @@ const calculateCentroid = (zones) => {
               <Button
                 fullWidth
                 variant={travelMode === 'walking' ? 'contained' : 'outlined'}
-                startIcon={<WalkIcon />}
+                startIcon={<WalkIcon sx={{ fontSize: '1rem' }} />}
                 onClick={() => setTravelMode('walking')}
                 sx={{
-                  py: 1.5,
+                  py: 1,
                   borderRadius: 2,
                   borderColor: travelMode === 'walking' ? 'primary.main' : 'grey.300',
                   fontWeight: 600,
+                  fontSize: '0.85rem',
                   color: travelMode === 'walking' ? 'white' : 'text.primary',
                   bgcolor: travelMode === 'walking' ? 'primary.main' : 'transparent',
                   '&:hover': {
@@ -2179,13 +2228,13 @@ const calculateCentroid = (zones) => {
         </Box>
 
         {loadError && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          <Alert severity="error" sx={{ mb: 1.5, borderRadius: 2, py: 0.5, fontSize: '0.8rem' }}>
             Failed to load Google Maps API. Please refresh the page and try again.
           </Alert>
         )}
 
         {locationError && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          <Alert severity="error" sx={{ mb: 1.5, borderRadius: 2, py: 0.5, fontSize: '0.8rem' }}>
             {locationError}
           </Alert>
         )}
@@ -2195,12 +2244,13 @@ const calculateCentroid = (zones) => {
           size="large"
           fullWidth
           sx={{ 
-             mt: 'auto',
-            py: 1.5,
+            mt: 0.5,
+            py: 1,
             fontWeight: 600,
             bgcolor: '#6A1B9A',
-            border: '2px solid #6A1B9A', // purple outline
+            border: '2px solid #6A1B9A',
             color: 'white',
+            fontSize: '0.9rem',
             '&:hover': {
               bgcolor: '#4A148C',
               transform: 'translateY(-1px)',
