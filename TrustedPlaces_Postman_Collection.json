@@ -1,0 +1,395 @@
+{
+  "info": {
+    "name": "SafeSide - Trusted Places API",
+    "description": "API collection for managing trusted places",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Trusted Place",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }}",
+            "description": "JWT token from login"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Lahore General Hospital\",\n  \"coordinates\": {\n    \"latitude\": 31.5204,\n    \"longitude\": 74.3587\n  },\n  \"phoneNumber\": \"042-99204400\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/trusted-places",
+          "host": ["{{baseUrl}}"],
+          "path": ["trusted-places"]
+        },
+        "description": "Create a new trusted place"
+      }
+    },
+    {
+      "name": "Get All Trusted Places",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/trusted-places",
+          "host": ["{{baseUrl}}"],
+          "path": ["trusted-places"]
+        },
+        "description": "Retrieve all trusted places"
+      }
+    },
+    {
+      "name": "Get Trusted Place by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/trusted-places/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["trusted-places", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "{{trustedPlaceId}}",
+              "description": "Trusted place ID"
+            }
+          ]
+        },
+        "description": "Get a single trusted place by ID"
+      }
+    },
+    {
+      "name": "Get Nearby Trusted Places",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/trusted-places/nearby?latitude=31.5204&longitude=74.3587&radius=5000",
+          "host": ["{{baseUrl}}"],
+          "path": ["trusted-places", "nearby"],
+          "query": [
+            {
+              "key": "latitude",
+              "value": "31.5204",
+              "description": "Your latitude"
+            },
+            {
+              "key": "longitude",
+              "value": "74.3587",
+              "description": "Your longitude"
+            },
+            {
+              "key": "radius",
+              "value": "5000",
+              "description": "Radius in meters (default: 5000)"
+            }
+          ]
+        },
+        "description": "Get trusted places within a certain radius"
+      }
+    },
+    {
+      "name": "Update Trusted Place",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Lahore General Hospital - Updated\",\n  \"phoneNumber\": \"042-99204401\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/trusted-places/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["trusted-places", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "{{trustedPlaceId}}"
+            }
+          ]
+        },
+        "description": "Update a trusted place"
+      }
+    },
+    {
+      "name": "Delete Trusted Place",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/trusted-places/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["trusted-places", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "{{trustedPlaceId}}"
+            }
+          ]
+        },
+        "description": "Delete a trusted place"
+      }
+    },
+    {
+      "name": "Dummy Data - Create Multiple Places",
+      "item": [
+        {
+          "name": "1. Shalimar Hospital",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Shalimar Hospital\",\n  \"coordinates\": {\n    \"latitude\": 31.5497,\n    \"longitude\": 74.3436\n  },\n  \"phoneNumber\": \"042-35789621\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "2. Services Hospital",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Services Hospital Lahore\",\n  \"coordinates\": {\n    \"latitude\": 31.5681,\n    \"longitude\": 74.3315\n  },\n  \"phoneNumber\": \"042-99213901\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "3. Mayo Hospital",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mayo Hospital\",\n  \"coordinates\": {\n    \"latitude\": 31.5701,\n    \"longitude\": 74.3053\n  },\n  \"phoneNumber\": \"042-99211101\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "4. Ittefaq Hospital",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ittefaq Hospital\",\n  \"coordinates\": {\n    \"latitude\": 31.4826,\n    \"longitude\": 74.2648\n  },\n  \"phoneNumber\": \"042-35863301\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "5. Lahore Police Station - Model Town",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lahore Police Station - Model Town\",\n  \"coordinates\": {\n    \"latitude\": 31.4859,\n    \"longitude\": 74.2994\n  },\n  \"phoneNumber\": \"042-35922900\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "6. Lahore Police Station - Gulberg",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lahore Police Station - Gulberg\",\n  \"coordinates\": {\n    \"latitude\": 31.5154,\n    \"longitude\": 74.3366\n  },\n  \"phoneNumber\": \"042-35767100\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "7. Jinnah Hospital",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jinnah Hospital\",\n  \"coordinates\": {\n    \"latitude\": 31.5056,\n    \"longitude\": 74.2652\n  },\n  \"phoneNumber\": \"042-99213333\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "8. Fatima Memorial Hospital",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fatima Memorial Hospital\",\n  \"coordinates\": {\n    \"latitude\": 31.4675,\n    \"longitude\": 74.3109\n  },\n  \"phoneNumber\": \"042-35843941\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "9. Lahore Rescue 1122 - Central",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lahore Rescue 1122 - Central\",\n  \"coordinates\": {\n    \"latitude\": 31.5497,\n    \"longitude\": 74.3436\n  },\n  \"phoneNumber\": \"1122\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        },
+        {
+          "name": "10. Combined Military Hospital (CMH) Lahore",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Combined Military Hospital (CMH) Lahore\",\n  \"coordinates\": {\n    \"latitude\": 31.4689,\n    \"longitude\": 74.3608\n  },\n  \"phoneNumber\": \"042-36672261\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trusted-places",
+              "host": ["{{baseUrl}}"],
+              "path": ["trusted-places"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT token from login endpoint"
+    },
+    {
+      "key": "trustedPlaceId",
+      "value": "",
+      "type": "string",
+      "description": "ID of trusted place (will be returned after creation)"
+    }
+  ]
+}
+
+

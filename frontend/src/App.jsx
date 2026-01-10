@@ -1,5 +1,5 @@
-import Login from './components/Login';
-import Signup from './components/Signup';
+import Login from './components/LoginModal';
+import Signup from './components/SignupModal';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './components/AuthContext';
 import LandingPage from './pages/LandingPage';

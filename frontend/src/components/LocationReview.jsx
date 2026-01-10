@@ -413,17 +413,51 @@ export default function LocationReview() {
       const feature = e.features[0];
       if (!feature) return;
 
-      new mapboxgl.Popup({ offset: [0, -15], className: 'crime-popup' })
+      const severity = feature.properties.severity || 1;
+      const severityColor = severity >= 4 ? '#f44336' : 
+                            severity >= 3 ? '#ff9800' : 
+                            severity >= 2 ? '#ffc107' : '#4caf50';
+      
+      const formattedDate = new Date(feature.properties.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      new mapboxgl.Popup({ 
+        offset: [0, -15], 
+        className: 'crime-popup',
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: '320px'
+      })
         .setLngLat(feature.geometry.coordinates)
         .setHTML(`
-          <div class="crime-popup-content">
-            <h4>${feature.properties.type.toUpperCase()}</h4>
-            <div class="crime-severity">
-              <span class="severity-label">Severity:</span>
-              <span class="severity-value">${feature.properties.severity}/5</span>
+          <div class="crime-popup-container">
+            <div class="crime-popup-header" style="background: linear-gradient(135deg, ${severityColor} 0%, ${severityColor}dd 100%);">
+              <div class="crime-type-badge">${feature.properties.type.toUpperCase()}</div>
+              <div class="severity-badge" style="background-color: ${severityColor};">
+                <span class="severity-stars">${'⚠'.repeat(severity)}</span>
+                <span class="severity-text">${severity}/5</span>
+              </div>
             </div>
-            <p>${feature.properties.description}</p>
-            <div class="crime-date">${new Date(feature.properties.date).toLocaleDateString()}</div>
+            <div class="crime-popup-body">
+              <div class="crime-description">
+                <p>${feature.properties.description || 'No description provided'}</p>
+              </div>
+              <div class="crime-meta">
+                <div class="meta-item">
+                  <span class="meta-icon">📅</span>
+                  <span class="meta-text">${formattedDate}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-icon">📍</span>
+                  <span class="meta-text">Incident Report</span>
+                </div>
+              </div>
+            </div>
           </div>
         `)
         .addTo(map.current);
@@ -519,44 +553,113 @@ export default function LocationReview() {
     }
     
     .crime-popup {
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      max-width: 300px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
+      max-width: 320px;
+      font-family: 'Roboto', 'Arial', sans-serif;
+      border: 1px solid rgba(0,0,0,0.1);
     }
     
-    .crime-popup-content {
-      padding: 12px;
+    .crime-popup-container {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
     }
     
-    .crime-popup-content h4 {
-      margin: 0 0 8px 0;
-      color: ${theme.palette.primary.main};
-    }
-    
-    .crime-severity {
+    .crime-popup-header {
+      padding: 14px 16px;
       display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+      position: relative;
     }
     
-    .severity-label {
+    .crime-type-badge {
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      flex: 1;
+    }
+    
+    .severity-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background-color: rgba(255,255,255,0.25);
+      backdrop-filter: blur(10px);
+      font-weight: 600;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .severity-stars {
+      font-size: 14px;
+    }
+    
+    .severity-text {
+      font-weight: 700;
+    }
+    
+    .crime-popup-body {
+      padding: 16px;
+      background: white;
+    }
+    
+    .crime-description {
+      margin-bottom: 14px;
+    }
+    
+    .crime-description p {
+      margin: 0;
+      color: #333;
+      line-height: 1.6;
+      font-size: 14px;
+      word-wrap: break-word;
+    }
+    
+    .crime-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .meta-icon {
+      font-size: 14px;
+      width: 18px;
+      text-align: center;
+    }
+    
+    .meta-text {
       font-weight: 500;
     }
     
-    .severity-value {
-      font-weight: 700;
-      color: ${theme.palette.secondary.main};
-    }
-    
-    .crime-date {
-      font-size: 0.8rem;
-      color: #666;
-      margin-top: 8px;
-    }
-    
     .mapboxgl-popup-close-button {
-      font-size: 18px;
-      padding: 4px 8px;
+      font-size: 20px;
+      padding: 6px 10px;
+      color: white;
+      font-weight: 700;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+    
+    .mapboxgl-popup-close-button:hover {
+      opacity: 1;
+      background-color: rgba(0,0,0,0.1);
     }
     
     .safety-score {
@@ -720,39 +823,102 @@ export default function LocationReview() {
               </Typography>
               
               <Grid container spacing={2} sx={{ mb: 2 }}>
-                {Object.entries(securityMetrics.categoryBreakdown).map(([type, data]) => (
-                  <Grid item xs={6} key={type}>
-                    <Box sx={{ mb: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+                {Object.entries(securityMetrics.categoryBreakdown).map(([type, data]) => {
+                  // Calculate progress percentage (0-100) based on security percentage
+                  // Higher security percentage (25 = max) means higher progress
+                  const progressValue = (data.percentage / 25) * 100;
+                  
+                  // Determine color based on report count and progress: 
+                  // If there are any reports (count > 0), shift colors towards severity (yellow/orange/red)
+                  // Green only when count = 0 (no reports)
+                  const getProgressColor = (value, count) => {
+                    if (count === 0) {
+                      // No reports = green (fully safe)
+                      return '#4CAF50'; // Green
+                    } else if (count <= 2) {
+                      // 1-2 reports = yellow (low risk but still some risk)
+                      return '#FFC107'; // Yellow
+                    } else if (count <= 5) {
+                      // 3-5 reports = orange (moderate risk)
+                      return '#FF9800'; // Orange
+                    } else if (count <= 10) {
+                      // 6-10 reports = dark orange/red-orange (high risk)
+                      return '#FF5722'; // Dark orange
+                    } else {
+                      // 10+ reports = red (very high risk)
+                      return '#F44336'; // Red
+                    }
+                  };
+                  
+                  const progressColor = getProgressColor(progressValue, data.count);
+                  
+                  return (
+                    <Grid item xs={6} key={type}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        p: 1.5,
+                        borderRadius: 2,
+                        border: `1px solid ${theme.palette.grey[200]}`,
+                        backgroundColor: theme.palette.grey[50],
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          backgroundColor: theme.palette.grey[100],
+                          boxShadow: theme.shadows[2]
+                        }
+                      }}>
                         <CrimeTypeChip 
                           label={type.charAt(0).toUpperCase() + type.slice(1)} 
                           crimeType={type}
                           size="small"
+                          sx={{ mb: 1.5, width: '100%', justifyContent: 'center' }}
                         />
-                        <Typography variant="body2" sx={{ fontWeight: 600, ml:1, mt:0.3 }}>
-                            {data.percentage}%
+                        <Box sx={{ position: 'relative', display: 'inline-flex', mb: 1 }}>
+                          <CircularProgress
+                            variant="determinate"
+                            value={progressValue}
+                            size={80}
+                            thickness={5}
+                            sx={{
+                              color: progressColor,
+                              '& .MuiCircularProgress-circle': {
+                                strokeLinecap: 'round',
+                              }
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              top: 0,
+                              left: 0,
+                              bottom: 0,
+                              right: 0,
+                              position: 'absolute',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              component="div"
+                              sx={{
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                color: progressColor
+                              }}
+                            >
+                              {Math.round(progressValue)}%
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', fontSize: '0.7rem' }}>
+                          {data.count} {data.count === 1 ? 'report' : 'reports'}
                         </Typography>
                       </Box>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={(data.percentage / 25) * 100} 
-                        sx={{ 
-                          height: 6, 
-                          borderRadius: 3,
-                          backgroundColor: theme.palette.grey[200],
-                          '& .MuiLinearProgress-bar': {
-                            backgroundColor: data.percentage >= 20 ? '#4CAF50' : 
-                                           data.percentage >= 15 ? '#FF9800' : 
-                                           data.percentage >= 10 ? '#FF5722' : '#F44336'
-                          }
-                        }} 
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        {data.count} {data.count === 1 ? 'report' : 'reports'}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                ))}
+                    </Grid>
+                  );
+                })}
               </Grid>
               
               <Divider sx={{ my: 2 }} />

@@ -83,59 +83,55 @@ const LandingPage = () => {
       </nav>
 
       {/* ===== HERO SECTION ===== */}
-<section className="hero-section">
-  {/* Animated Gradient & Shapes Background */}
-  <div className="hero-background">
-    <span className="bg-shape shape1"></span>
-    <span className="bg-shape shape2"></span>
-    <span className="bg-shape shape3"></span>
-  </div>
-
-  <motion.div
-    className="hero-content"
-    initial={{ opacity: 0, x: -50 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ delay: 0.3, duration: 0.7 }}
-  >
-    <motion.h1
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.5 }}
-    >
-      Your <span>Safety</span> is Our <span>Priority</span> 🛡️
-    </motion.h1>
-
-    <motion.p
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.7 }}
-    >
-      Navigate Pakistan with confidence using real-time danger alerts and safest travel routes.
-    </motion.p>
-
-    <div className="cta-container">
-      <motion.button
-        className="cta-button primary"
-        whileHover={{ scale: 1.05, boxShadow: "0 12px 35px rgba(142, 68, 173, 0.6), 0 0 20px rgba(255,159,67,0.3)" }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => setActiveModal('signup')}
-      >
-        Get Started
-      </motion.button>
-    </div>
-  </motion.div>
-
-  {/* Optional Hero Image */}
-  <motion.div
-    className="hero-image"
-    initial={{ opacity: 0, x: 50 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ delay: 0.9, duration: 0.7 }}
-  >
-    <img src={safetyTravelImg} alt="Hero" />
-  </motion.div>
-</section>
-
+      <section className="hero-section">
+        <div className="hero-background"></div>
+        <motion.div
+          className="hero-content"
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.7 }}
+        >
+          <motion.h1
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            Your <span>Safety</span> is Our <span>Priority</span>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            Navigate in Pakistan with confidence using real-time danger alerts and travelling on safest routes.
+          </motion.p>
+          <div className="cta-container">
+            <motion.button
+              className="cta-button primary"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveModal('signup')}
+            >
+              Get Started
+            </motion.button>
+          </div>
+        </motion.div>
+        
+          <img
+            src={safetyTravelImg}
+            alt="Safety travel illustration"
+            style={{
+              width: '100%',
+              maxWidth: 800,
+              height: 'auto',
+              borderRadius: 0,
+              margin: '0 auto',
+              display: 'block',
+              background: 'none',
+              padding: 0
+            }}
+          />
+      </section>
 
       {/* ===== SAFETY STATS ===== */}
       <section className="stats-section">

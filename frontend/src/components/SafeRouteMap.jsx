@@ -19,13 +19,17 @@ import Modal from '@mui/material/Modal';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import PhoneIcon from '@mui/icons-material/Phone';
 import ReportIcon from '@mui/icons-material/Report';
+import SecurityIcon from '@mui/icons-material/Security';
 import { useNavigate } from 'react-router-dom';
 import Snackbar from '@mui/material/Snackbar';
 import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 const REPORT_URL = import.meta.env.VITE_REPORT_URL;
+const TRUSTED_PLACES_URL = import.meta.env.VITE_REPORT_URL?.replace('/report', '/trusted-places') || 'http://localhost:5000/trusted-places';
 
 export default function SafeRouteMap({ end: propEnd }) {
   const theme = useTheme();
@@ -54,6 +58,7 @@ export default function SafeRouteMap({ end: propEnd }) {
   const [locationError, setLocationError] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [dangerZones, setDangerZones] = useState([]);
+  const [trustedPlaces, setTrustedPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
   const [end, setEnd] = useState(propEnd || null);
   const [riskWarning, setRiskWarning] = useState(null);
@@ -66,6 +71,7 @@ export default function SafeRouteMap({ end: propEnd }) {
   const [hasArrived, setHasArrived] = useState(false);
   const [routeSteps, setRouteSteps] = useState([]);
   const dangerZonesDrawnRef = useRef(false);
+  const trustedPlacesDrawnRef = useRef(false);
   const currentRouteRef = useRef(null);
   const lastCalculatedPositionRef = useRef(null);
   const [userProgressIndex, setUserProgressIndex] = useState(0);
@@ -76,6 +82,8 @@ export default function SafeRouteMap({ end: propEnd }) {
   const [routeType, setRouteType] = useState('Normal');
   const [autoRecenter, setAutoRecenter] = useState(true);
   const originalRouteTypeRef = useRef(null);
+  const [feelUnsafeMode, setFeelUnsafeMode] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
   const deviationThreshold = 40; // meters
   const emergencyNumber = localStorage.getItem('emergencyNumber') || 15;
@@ -137,7 +145,7 @@ export default function SafeRouteMap({ end: propEnd }) {
     };
   }, [map.current]);
 
-  // Danger zones fetch
+  // Danger zones and trusted places fetch
   useEffect(() => {
     if (!currentPosition) return;
     const fetchDangerZones = async () => {
@@ -231,7 +239,33 @@ export default function SafeRouteMap({ end: propEnd }) {
         setLocationError('Failed to load danger zone data');
       }
     };
+
+    const fetchTrustedPlaces = async () => {
+      try {
+        const response = await axios.get(`${TRUSTED_PLACES_URL}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const places = response.data.trustedPlaces?.map((place, index) => ({
+          id: place._id || `trusted-place-${index}`,
+          lat: place.coordinates.latitude,
+          lng: place.coordinates.longitude,
+          name: place.name,
+          phoneNumber: place.phoneNumber,
+          createdAt: place.createdAt || null
+        })) || [];
+        setTrustedPlaces(places);
+      } catch (err) {
+        console.error('Failed to load trusted places:', err);
+        // Don't set error state for trusted places, just log it
+      }
+    };
+
     fetchDangerZones();
+    fetchTrustedPlaces();
   }, [currentPosition]);
 
   useEffect(() => {
@@ -274,14 +308,61 @@ export default function SafeRouteMap({ end: propEnd }) {
     }
   }, [currentPosition, isNavigating, end, shouldCalculateRoute]);
 
-  // Draw danger zones
+  // Store previous end to detect changes
+  const prevEndRef = useRef(end);
+  
+  // Recalculate route when destination changes during navigation
   useEffect(() => {
-    if (mapLoaded && dangerZones.length > 0 && !dangerZonesDrawnRef.current) {
-      drawAllDangerZones();
-      setLoading(false); 
-      dangerZonesDrawnRef.current = true;
+    if (isNavigating && currentPosition && end && mapLoaded) {
+      // Check if end has actually changed
+      const endChanged = prevEndRef.current && 
+        (prevEndRef.current[0] !== end[0] || prevEndRef.current[1] !== end[1]);
+      
+      if (endChanged && currentRouteRef.current) {
+        setShouldCalculateRoute(true);
+      }
+      prevEndRef.current = end;
     }
-  }, [mapLoaded, dangerZones]);
+  }, [end, isNavigating, currentPosition, mapLoaded]);
+
+  // Draw danger zones - hide them when in feel unsafe mode
+  useEffect(() => {
+    if (mapLoaded && map.current && dangerZones.length > 0) {
+      // If in feel unsafe mode, clear danger zones and don't draw them
+      if (feelUnsafeMode) {
+        clearDangerZones();
+        dangerZonesDrawnRef.current = false;
+        return;
+      }
+      
+      try {
+        // Check if zones are actually visible on map, if not, redraw them
+        const layers = map.current.getStyle().layers || [];
+        const hasZonesOnMap = layers.some(layer => layer.id.startsWith('danger-zone-'));
+        if (!dangerZonesDrawnRef.current || !hasZonesOnMap) {
+          drawAllDangerZones();
+          setLoading(false); 
+          dangerZonesDrawnRef.current = true;
+        }
+      } catch (error) {
+        // If checking layers fails, just draw them
+        if (!dangerZonesDrawnRef.current) {
+          drawAllDangerZones();
+          setLoading(false); 
+          dangerZonesDrawnRef.current = true;
+        }
+      }
+    }
+  }, [mapLoaded, dangerZones, feelUnsafeMode]);
+
+  // Draw trusted places - redraw if needed when map is ready and trusted places are available
+  useEffect(() => {
+    if (mapLoaded && trustedPlaces.length > 0) {
+      // Always redraw trusted places to ensure they're visible and on top
+      drawAllTrustedPlaces();
+      trustedPlacesDrawnRef.current = true;
+    }
+  }, [mapLoaded, trustedPlaces]);
 
   useEffect(() => {
     if (propEnd) setEnd(propEnd);
@@ -320,12 +401,18 @@ export default function SafeRouteMap({ end: propEnd }) {
       };
 
       // Recalculate severity for the remaining route
-      const remainingRouteSeverity = calculateRouteSeverity(remainingRoute, dangerZones);
+      // In feelUnsafeMode, ignore danger zones and always use green route
+      const remainingRouteSeverity = feelUnsafeMode 
+        ? { totalSeverity: 0, maxSeverity: 0, intersectingZones: [] }
+        : calculateRouteSeverity(remainingRoute, dangerZones);
       lastRouteSeverityRef.current = remainingRouteSeverity;
       
       // Determine color based on remaining danger zones
+      // In feelUnsafeMode, always use green (shortest path, ignore danger zones)
       let routeColor;
-      if (remainingRouteSeverity.maxSeverity >= 4) {
+      if (feelUnsafeMode) {
+        routeColor = '#00ff00'; // Always green for emergency route
+      } else if (remainingRouteSeverity.maxSeverity >= 4) {
         routeColor = '#ff0000'; // Red for high risk
       } else if (remainingRouteSeverity.maxSeverity >= 3) {
         routeColor = '#ff6600'; // Orange for moderate risk
@@ -338,7 +425,9 @@ export default function SafeRouteMap({ end: propEnd }) {
       }
 
       let routeType = 'Normal';
-      if (routeColor === '#ff0000') {
+      if (feelUnsafeMode) {
+        routeType = 'Emergency Route';
+      } else if (routeColor === '#ff0000') {
         routeType = 'High Risk';
       } else if (routeColor === '#ff6600') {
         routeType = 'Moderate Risk';
@@ -483,7 +572,7 @@ export default function SafeRouteMap({ end: propEnd }) {
         }
       }
     }
-  }, [currentPosition, isNavigating, dangerZones]);
+  }, [currentPosition, isNavigating, dangerZones, feelUnsafeMode]);
 
   const initializeMap = () => {
     if (map.current || !mapContainer.current) return;
@@ -503,7 +592,7 @@ export default function SafeRouteMap({ end: propEnd }) {
 
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v12',
+          style: isDarkTheme ? 'mapbox://styles/mapbox/navigation-night-v1' : 'mapbox://styles/mapbox/streets-v12',
           center: userCoords,
           zoom: 16
         });
@@ -601,6 +690,18 @@ export default function SafeRouteMap({ end: propEnd }) {
     try {
       // Direct route
       const directRoute = await getDirectRoute(startPos, endPos);
+      
+      // If in "I feel unsafe" mode, always use shortest direct route with green color (ignore danger zones)
+      if (feelUnsafeMode) {
+        drawRoute(directRoute, '#00ff00'); // Always green for safe path
+        setRiskWarning({
+          level: "Emergency Route to Safe Place",
+          message: "Taking the shortest route to the nearest safe place. Danger zones are ignored.",
+          color: "bg-green-100 text-green-800"
+        });
+        return directRoute;
+      }
+      
       if (dangerZones.length === 0) {
         drawRoute(directRoute, '#00ff00');
         return directRoute;
@@ -1026,6 +1127,171 @@ const calculateCentroid = (zones) => {
     });
   };
 
+  // Draw all trusted places on the map
+  const drawAllTrustedPlaces = () => {
+    if (!mapLoaded || !map.current) {
+      console.log("Cannot draw trusted places - map not ready");
+      return;
+    }
+
+    console.log("Drawing all trusted places...");
+    
+    // Clear existing trusted places first
+    clearTrustedPlaces();
+
+    trustedPlaces.forEach((place) => {
+      drawSingleTrustedPlace(place);
+    });
+    
+    console.log(`Drew ${trustedPlaces.length} trusted places`);
+  };
+
+  const clearTrustedPlaces = () => {
+    if (!map.current) return;
+    
+    // Remove event listeners first to prevent memory leaks
+    const layers = map.current.getStyle().layers || [];
+    layers.forEach(layer => {
+      if (layer.id.startsWith('trusted-place-')) {
+        // Remove event listeners
+        try {
+          map.current.off('click', layer.id);
+          map.current.off('mouseenter', layer.id);
+          map.current.off('mouseleave', layer.id);
+        } catch (e) {
+          // Ignore errors if listeners don't exist
+        }
+      }
+    });
+    
+    // Remove all existing trusted place layers and sources
+    layers.forEach(layer => {
+      if (layer.id.startsWith('trusted-place-')) {
+        if (map.current.getLayer(layer.id)) {
+          map.current.removeLayer(layer.id);
+        }
+        const sourceId = layer.source;
+        if (sourceId && sourceId.startsWith('trusted-place-')) {
+          try {
+            map.current.removeSource(sourceId);
+          } catch (e) {
+            // Source might already be removed
+          }
+        }
+      }
+    });
+  };
+
+  const drawSingleTrustedPlace = (place) => {
+    const sourceId = `trusted-place-${place.id}`;
+    const fillId = `${sourceId}-fill`;
+    const outlineId = `${sourceId}-outline`;
+
+    try {
+      // Create square polygon (30 meter radius square)
+      const squareSize = 0.001; // Approximately 30 meters in degrees at equator
+      const points = [
+        [place.lng + squareSize, place.lat + squareSize], // Top-right
+        [place.lng - squareSize, place.lat + squareSize], // Top-left
+        [place.lng - squareSize, place.lat - squareSize], // Bottom-left
+        [place.lng + squareSize, place.lat - squareSize], // Bottom-right
+        [place.lng + squareSize, place.lat + squareSize]  // Close the polygon
+      ];
+
+      // Add source
+      map.current.addSource(sourceId, {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [points]
+          },
+          properties: {
+            id: place.id,
+            name: place.name,
+            phoneNumber: place.phoneNumber
+          }
+        }
+      });
+
+      // Add fill layer with green color - don't specify beforeId to place on top
+      map.current.addLayer({
+        id: fillId,
+        type: 'fill',
+        source: sourceId,
+        paint: {
+          'fill-color': '#22c55e', // Green color
+          'fill-opacity': 0.4
+        }
+      });
+
+      // Add outline layer - also on top for visibility
+      map.current.addLayer({
+        id: outlineId,
+        type: 'line',
+        source: sourceId,
+        paint: {
+          'line-color': '#16a34a', // Darker green
+          'line-width': 2,
+          'line-opacity': 0.8
+        }
+      });
+
+      // Add interactivity - attach to both fill and outline layers
+      addTrustedPlaceInteractivity(fillId, place);
+      addTrustedPlaceInteractivity(outlineId, place);
+
+    } catch (error) {
+      console.error(`Error drawing trusted place ${place.id}:`, error);
+    }
+  };
+
+  const addTrustedPlaceInteractivity = (layerId, place) => {
+    if (!map.current) return;
+
+    map.current.on('click', layerId, (e) => {
+      // Close previous popup if open
+      if (currentTrustedPlacePopup.current) {
+        currentTrustedPlacePopup.current.remove();
+        currentTrustedPlacePopup.current = null;
+      }
+
+      // Create popup with place information
+      const popup = new mapboxgl.Popup({ 
+        closeButton: true,
+        className: 'trusted-place-popup',
+        maxWidth: '300px'
+      })
+      .setLngLat([place.lng, place.lat])
+      .setHTML(`
+        <div style="padding: 8px;">
+          <h3 style="margin: 0 0 8px 0; color: #16a34a; font-size: 16px; font-weight: bold;">
+            ${place.name || 'Trusted Place'}
+          </h3>
+          ${place.phoneNumber ? `
+            <div style="margin-top: 8px; font-size: 14px;">
+              <strong>Phone:</strong> 
+              <a href="tel:${place.phoneNumber}" style="color: #16a34a; text-decoration: none;">
+                ${place.phoneNumber}
+              </a>
+            </div>
+          ` : ''}
+        </div>
+      `)
+      .addTo(map.current);
+      currentTrustedPlacePopup.current = popup;
+    });
+
+    map.current.on('mouseenter', layerId, () => {
+      map.current.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.current.on('mouseleave', layerId, () => {
+      map.current.getCanvas().style.cursor = '';
+    });
+  };
+
   const drawSingleDangerZone = (zone) => {
     const sourceId = `danger-zone-${zone.id}`;
     const fillId = `${sourceId}-fill`;
@@ -1101,6 +1367,7 @@ const calculateCentroid = (zones) => {
 
   // Store the currently open popup
   const currentZonePopup = useRef(null);
+  const currentTrustedPlacePopup = useRef(null);
 
   const addZoneInteractivity = (layerId, zone) => {
     if (!map.current) return;
@@ -1299,6 +1566,10 @@ const calculateCentroid = (zones) => {
         routeColor = '#ffff00';
       } else if (severityInfo.maxSeverity === 0 && severityInfo.intersectingZones && severityInfo.intersectingZones.length > 0) {
         routeColor = '#00ff00';
+      } else if (severityInfo.maxSeverity === 0 && severityInfo.intersectingZones.length === 0) {
+        // If route avoids all zones (maxSeverity 0, no intersections) but danger zones exist, it's a safe route (green)
+        // If no danger zones exist at all, it's normal (blue)
+        routeColor = (dangerZones.length > 0) ? '#00ff00' : '#3a86ff';
       } else {
         routeColor = '#3a86ff';
       }
@@ -1393,6 +1664,13 @@ const calculateCentroid = (zones) => {
       }
 
       console.log("✅ Route drawn successfully");
+      
+      // Redraw trusted places after route is drawn to ensure they're on top and clickable
+      if (trustedPlaces.length > 0) {
+        setTimeout(() => {
+          drawAllTrustedPlaces();
+        }, 100);
+      }
     } catch (error) {
       console.error("Error drawing route:", error);
     }
@@ -1432,12 +1710,13 @@ const calculateCentroid = (zones) => {
   const handleStopNavigation = () => {
     // Only stop route logic, do not stop user location tracking or remove the GeolocateControl
     setIsNavigating(false);
+    setFeelUnsafeMode(false); // Reset feel unsafe mode when navigation stops
     if (positionWatchId.current !== null) {
       navigator.geolocation.clearWatch(positionWatchId.current);
       positionWatchId.current = null;
     }
     // Clear route if exists
-    if (map.current.getSource('route')) {
+    if (map.current && map.current.getSource('route')) {
       map.current.removeLayer('route');
       map.current.removeSource('route');
       if (map.current.getLayer('route-outline')) {
@@ -1446,7 +1725,126 @@ const calculateCentroid = (zones) => {
     }
     // Clear distance and time
     setRemainingDistance(null);
+    // Redraw danger zones to ensure they're visible
+    if (map.current && mapLoaded && dangerZones.length > 0) {
+      dangerZonesDrawnRef.current = false;
+      drawAllDangerZones();
+    }
   };
+
+  // Find the nearest trusted place from current position
+  const findNearestTrustedPlace = () => {
+    if (!currentPosition || trustedPlaces.length === 0) {
+      return null;
+    }
+
+    let nearestPlace = null;
+    let nearestDistance = Infinity;
+
+    trustedPlaces.forEach((place) => {
+      const distance = haversineDistance(
+        currentPosition,
+        [place.lng, place.lat]
+      );
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestPlace = place;
+      }
+    });
+
+    return nearestPlace;
+  };
+
+  // Handle "I feel unsafe" button click
+  const handleFeelUnsafe = async () => {
+    if (!currentPosition) {
+      setLocationError('Please allow location access to find nearest safe place');
+      return;
+    }
+
+    const nearestPlace = findNearestTrustedPlace();
+    if (!nearestPlace) {
+      setLocationError('No trusted places found nearby. Please contact emergency services.');
+      return;
+    }
+
+    // Enable "I feel unsafe" mode - this will bypass danger zones
+    setFeelUnsafeMode(true);
+    
+    // Remove all danger zones from the map when in feel unsafe mode
+    if (map.current && mapLoaded) {
+      clearDangerZones();
+      dangerZonesDrawnRef.current = false;
+    }
+
+    // Update destination to nearest trusted place (format: [lng, lat] for mapbox)
+    const newDestination = [nearestPlace.lng, nearestPlace.lat];
+    
+    setEnd(newDestination);
+    
+    // Update the destination marker if it exists
+    if (destinationMarker.current && map.current) {
+      destinationMarker.current.setLngLat(newDestination);
+      const popup = new mapboxgl.Popup().setHTML(`<b>Safe Place: ${nearestPlace.name}</b>${nearestPlace.phoneNumber ? `<br/>Phone: ${nearestPlace.phoneNumber}` : ''}`);
+      destinationMarker.current.setPopup(popup);
+    }
+    
+    // Ensure trusted places are redrawn and visible (they may have been covered by route)
+    if (map.current && trustedPlaces.length > 0) {
+      // Small delay to ensure map updates are processed, then redraw trusted places on top
+      setTimeout(() => {
+        drawAllTrustedPlaces();
+      }, 200);
+    }
+    
+    // If already navigating, trigger route recalculation
+    if (isNavigating) {
+      setShouldCalculateRoute(true);
+    } else {
+      // Start navigation to the trusted place
+      handleStartNavigation();
+    }
+
+    // Show a confirmation message
+    setRiskWarning({
+      level: "🛡️ Emergency Route to Safe Place",
+      message: `Routing to nearest safe place: ${nearestPlace.name}${nearestPlace.phoneNumber ? ` (${nearestPlace.phoneNumber})` : ''}`,
+      color: "bg-green-100 text-green-800"
+    });
+  };
+
+  // Handle theme toggle
+  const handleThemeToggle = () => {
+    setIsDarkTheme(prev => !prev);
+  };
+
+  // Update map style when theme changes
+  useEffect(() => {
+    if (map.current && mapLoaded) {
+      const newStyle = isDarkTheme 
+        ? 'mapbox://styles/mapbox/navigation-night-v1' 
+        : 'mapbox://styles/mapbox/streets-v12';
+      map.current.setStyle(newStyle);
+      
+      // Redraw layers after style loads
+      map.current.once('style.load', () => {
+        if (dangerZones.length > 0) {
+          dangerZonesDrawnRef.current = false;
+          drawAllDangerZones();
+        }
+        if (trustedPlaces.length > 0) {
+          trustedPlacesDrawnRef.current = false;
+          drawAllTrustedPlaces();
+        }
+        if (currentRouteRef.current) {
+          const currentRoute = currentRouteRef.current;
+          const severity = calculateRouteSeverity(currentRoute, dangerZones);
+          // Don't pass routeColor - let drawRoute determine color from severity
+          drawRoute(currentRoute, null, severity);
+        }
+      });
+    }
+  }, [isDarkTheme, mapLoaded]);
 
   const updateDestinationMarker = async (position) => {
     if (!mapLoaded || !destinationMarker.current) return;
@@ -1495,18 +1893,19 @@ const calculateCentroid = (zones) => {
 
   const ResponsiveRouteLegend = styled(Box)(({ theme }) => ({
     position: 'absolute',
-    top: theme.spacing(6.5),
+    top: theme.spacing(8),
     right: theme.spacing(0.5),
     zIndex: 10,
     background: 'rgba(255, 255, 255, 0.97)',
     backdropFilter: 'blur(10px)',
     borderRadius: theme.shape.borderRadius * 1.5,
     boxShadow: '0 2px 12px rgba(58,134,255,0.10), 0 1.5px 6px rgba(0,0,0,0.08)',
-    padding: theme.spacing(1.2),
+    padding: theme.spacing(1, 0.8),
     border: `1.3px solid ${routeColor}`,
-    minWidth: 'auto', 
-    maxWidth: 'none',
-    width: 'auto',
+    width: '60px',
+    height: 'auto',
+    minHeight: '160px',
+    maxHeight: '220px',
     transform: 'scale(0.95)',
     transition: 'all 0.2s ease',
     '&:hover': {
@@ -1514,6 +1913,20 @@ const calculateCentroid = (zones) => {
       boxShadow: '0 6px 24px rgba(58,134,255,0.18), 0 2px 8px rgba(0,0,0,0.12)'
     }
   }));
+
+  // Calculate health bar percentage based on route color/type
+  const getHealthBarPercentage = () => {
+    if (routeColor === '#00ff00' || routeColor === '#3a86ff') {
+      return 100; // Green (Safe) or Blue (Normal) = full bar
+    } else if (routeColor === '#ffff00') {
+      return 70; // Yellow (Low Risk) = 70%
+    } else if (routeColor === '#ff6600') {
+      return 40; // Orange (Moderate Risk) = 40%
+    } else if (routeColor === '#ff0000') {
+      return 20; // Red (High Risk) = 20%
+    }
+    return 100; // Default to full
+  };
 
   const ResponsiveWarningAlert = styled(Paper)(({ severity, theme }) => ({
     backgroundColor: 
@@ -2012,12 +2425,12 @@ return (
         position: 'relative',
         overflow: 'hidden',
         boxSizing: 'border-box',
-        pt: initializationPhase ? { xs: 2, sm: 5, md: 7, lg: 10 } : 0,
+        pt: initializationPhase ? { xs: 2, sm: 5, md: 7, lg: 10 } : { xs: 1, sm: 2, md: 2.5, lg: 3 },
         pb: initializationPhase 
           ? { xs: 6, sm: 5, md: 7, lg: 10 } 
-          : { xs: 'calc(45px + env(safe-area-inset-bottom, 0px))', 
-              sm: 2.5, md: 3, lg: 4 },
-        px: { xs: 1.5, sm: 3, md: 4, lg: 6 },
+          : { xs: 'calc(40px + env(safe-area-inset-bottom, 0px))', 
+              sm: 2, md: 2.5, lg: 3.5 },
+        px: { xs: 1, sm: 2.5, md: 3, lg: 5 },
         background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
         // Add safe area padding
         paddingLeft: 'env(safe-area-inset-left, 0px)',
@@ -2030,13 +2443,14 @@ return (
           width: '100%',
           height: '100%',
           borderRadius: { xs: 2, sm: 3, md: 4 },
-          boxShadow: 6,
+          boxShadow: '0 2px 0px rgba(0, 0, 0, 0.15), 0 2px 16px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
           overflow: 'hidden',
           position: 'relative',
           background: 'rgba(255,255,255,0.97)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           flexDirection: 'column',
+          border: '3px solid rgba(0, 0, 0, 0.08)',
         }}
       >
         {/* Map Container */}
@@ -2054,61 +2468,123 @@ return (
  
         {/* Top Bar for Directions */}
         {isNavigating && routeSteps.length > 0 && (
-          <Box sx={{
-            position: 'absolute',
-            top: { xs: 8, sm: 12 },
-            left: { xs: 8, sm: 12 },
-            right: { xs: 8, sm: 12 },
-            zIndex: 10,
-            background: 'rgba(77, 0, 128, 0.73)',
-            backdropFilter: 'blur(10px)',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-            p: { xs: 0.5, sm: 0.8 }, // less padding
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: { xs: 38, sm: 44 }, // less height
-            borderRadius: { xs: 2, sm: 3 },
-            boxShadow: '0 4px 24px rgba(76,0,128,0.18), 0 1.5px 6px rgba(0,0,0,0.10)' // enhanced shadow
-          }}>
-            {/* Directions Content */}
+          <>
             <Box sx={{
+              position: 'absolute',
+              top: { xs: 8, sm: 12 },
+              left: { xs: 8, sm: 12 },
+              right: { xs: 8, sm: 12 },
+              zIndex: 10,
+              background: 'rgba(77, 0, 128, 0.73)',
+              backdropFilter: 'blur(10px)',
+              borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+              p: { xs: 0.5, sm: 0.8 }, // less padding
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: 1,
-              px: 2,
-              textAlign: 'center'
+              justifyContent: 'space-between',
+              minHeight: { xs: 38, sm: 44 }, // less height
+              borderRadius: { xs: 2, sm: 3 },
+              boxShadow: '0 4px 24px rgba(76,0,128,0.18), 0 1.5px 6px rgba(0,0,0,0.10)' // enhanced shadow
             }}>
-              <Typography
-                variant="body2"
+              {/* Theme Toggle Button - Left */}
+              <IconButton
+                onClick={handleThemeToggle}
                 sx={{
-                  fontWeight: 600,
-                  fontSize: { xs: '1.2rem', sm: '1rem' },
-                  lineHeight: 1.2,
-                  wordBreak: 'break-word',
-                  color: 'white'
+                  color: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.15)',
+                  width: { xs: 22, sm: 26 },
+                  height: { xs: 22, sm: 26 },
+                  minWidth: { xs: 22, sm: 26 },
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.25)',
+                  },
+                  transition: 'all 0.2s ease',
+                  mr: 1
                 }}
               >
-                {routeSteps[0]?.maneuver?.instruction || 'Continue straight'}
-              </Typography>
-              {routeSteps[0]?.distance > 0 && (
+                {isDarkTheme ? (
+                  <Brightness7Icon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }} />
+                ) : (
+                  <Brightness4Icon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }} />
+                )}
+              </IconButton>
+
+              {/* Directions Content - Center */}
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 1,
+                textAlign: 'center',
+                px: 1
+              }}>
                 <Typography
-                  variant="caption"
+                  variant="body2"
                   sx={{
-                    display: 'block',
-                    mt: 0.5,
-                    fontSize: { xs: '0.9rem', sm: '0.8rem' },
-                    color: 'white'
+                    fontWeight: 600,
+                    fontSize: { xs: '1.2rem', sm: '1rem' },
+                    lineHeight: 1.2,
+                    wordBreak: 'break-word',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    flexWrap: 'wrap',
+                    justifyContent: 'center'
                   }}
                 >
-                  {routeSteps[0].distance >= 1000
-                    ? `${(routeSteps[0].distance / 1000).toFixed(1)} km`
-                    : `${Math.round(routeSteps[0].distance)} m`}
+                  <span>{routeSteps[0]?.maneuver?.instruction || 'Continue straight'}</span>
+                  {routeSteps[0]?.distance > 0 && (
+                    <span style={{ 
+                      fontSize: routeSteps[0].distance >= 1000 ? '0.85rem' : '0.9rem',
+                      opacity: 0.9,
+                      fontWeight: 500
+                    }}>
+                      {routeSteps[0].distance >= 1000
+                        ? `${(routeSteps[0].distance / 1000).toFixed(1)} km`
+                        : `${Math.round(routeSteps[0].distance)} m`}
+                    </span>
+                  )}
                 </Typography>
-              )}
+              </Box>
+
+              {/* Spacer for balance */}
+              <Box sx={{ width: { xs: 32, sm: 36 }, minWidth: { xs: 32, sm: 36 }, mr: 1 }} />
             </Box>
-          </Box>
+
+            {/* "I Feel Unsafe" Button - Top Left */}
+            <Box sx={{
+              position: 'absolute',
+              top: { xs: 58, sm: 64 }, // Position below the directions bar
+              left: { xs: 12, sm: 16 },
+              zIndex: 11,
+            }}>
+              <Button
+                variant="contained"
+                color="error"
+                size="medium"
+                startIcon={<SecurityIcon />}
+                onClick={handleFeelUnsafe}
+                sx={{
+                  borderRadius: '20px',
+                  boxShadow: 6,
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 0.75, sm: 1 },
+                  fontWeight: 'bold',
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  backgroundColor: '#ef4444',
+                  '&:hover': {
+                    backgroundColor: '#dc2626',
+                    transform: 'scale(1.05)',
+                  },
+                  transition: 'all 0.2s ease',
+                  textTransform: 'none',
+                }}
+              >
+                I Feel Unsafe
+              </Button>
+            </Box>
+          </>
         )}
 
         {/* Bottom Bar for Remaining Distance */}
@@ -2264,48 +2740,75 @@ return (
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: theme.spacing(0.5),
-              padding: theme.spacing(1.0),
+              justifyContent: 'space-between',
+              height: '100%',
+              gap: theme.spacing(0.6),
+              py: 0.5
             }}>
               <Typography 
                 variant="caption" 
                 sx={{ 
-                  fontSize: '0.65rem', 
+                  fontSize: '0.6rem', 
                   fontWeight: 700,
                   color: 'text.secondary',
-                  lineHeight: 1,
-                  mb: 0.5
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  whiteSpace: 'nowrap',
+                  textAlign: 'center'
                 }}
               >
-                ROUTE SAFETY
+                Safety
               </Typography>
-              <Box sx={{ 
+              {/* Vertical Health Bar Container */}
+              <Box sx={{
+                width: '18px',
+                height: '120px',
+                backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                borderRadius: '9px',
+                overflow: 'hidden',
+                position: 'relative',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
                 display: 'flex',
-                alignItems: 'center',
-                gap: theme.spacing(0.75)
+                flexDirection: 'column',
+                justifyContent: 'flex-end'
               }}>
-                <Box sx={{ 
-                  width: 14,
-                  height: 14,
-                  borderRadius: '50%',
+                {/* Vertical Health Bar Fill */}
+                <Box sx={{
+                  width: '100%',
+                  height: `${getHealthBarPercentage()}%`,
                   backgroundColor: routeColor,
-                  border: '2px solid white',
-                  boxShadow: `0 0 0 1px rgba(0,0,0,0.1), 0 2px 4px ${routeColor}80`,
-                  flexShrink: 0
+                  borderRadius: '0 0 9px 9px',
+                  transition: 'height 0.3s ease, background-color 0.3s ease',
+                  boxShadow: `0 0 8px ${routeColor}80, inset 0 -1px 0 rgba(255, 255, 255, 0.2)`,
+                  position: 'relative',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '50%',
+                    background: 'linear-gradient(to top, rgba(255, 255, 255, 0.3), transparent)',
+                    borderRadius: '0 0 9px 9px'
+                  }
                 }} />
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    fontSize: '0.75rem', 
-                    fontWeight: 700,
-                    color: 'text.primary',
-                    lineHeight: 1,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {routeType}
-                </Typography>
               </Box>
+              {/* Route Type Label */}
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  fontSize: '0.65rem', 
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '55px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {routeType}
+              </Typography>
             </Box>
           </ResponsiveRouteLegend>
         )}
@@ -2487,13 +2990,15 @@ return (
               onClick={handleReturnToSearch}
               sx={{
                 color: 'primary.main',
-                bgcolor: 'rgba(0,0,0,0.05)',
+                bgcolor: 'white',
                 width: 44,
                 height: 44,
-                boxShadow: 2,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15), 0 1px 4px rgba(0, 0, 0, 0.1)',
                 borderRadius: 2,
+                border: '1px solid rgba(0, 0, 0, 0.1)',
                 '&:hover': {
-                  bgcolor: 'rgba(0,0,0,0.10)',
+                  bgcolor: '#f5f5f5',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15)',
                 },
                 transition: 'all 0.2s ease',
               }}

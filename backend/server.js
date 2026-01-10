@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 // Import routes
 import authRoutes from './routes/auth.js';
 import CrimeReportRoutes from './routes/crimeReports.js';
+import trustedPlacesRoutes from './routes/trustedPlaces.js';
 
 dotenv.config();
 
@@ -37,7 +38,7 @@ app.use(express.json());
 
 // Database connection
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
+  .then(() => console.log("MongoDB connected:", mongoose.connection.name))
   .catch(err => console.error(err));
 
 // Socket.io
@@ -51,6 +52,7 @@ io.on('connection', (socket) => {
 // Routes
 app.use('/user', authRoutes);
 app.use('/report', CrimeReportRoutes);
+app.use('/trusted-places', trustedPlacesRoutes);
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,7 +62,7 @@ const frontendBuildPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendBuildPath));
 
 // Catch-all: serve index.html for React Router (non-API routes)
-app.get(/^\/(?!user|report).*/, (req, res) => {
+app.get(/^\/(?!user|report|trusted-places).*/, (req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
