@@ -1,12 +1,12 @@
 # 🛡️ SafeSide Lahore — Safety Navigation Web App for Pakistan
 
-SafeSide is a full-stack web application designed to enhance **women’s safety in Pakistan** by providing real-time incident reports, safe route navigation, and reporting unsafe incidents. This app empowers users to make informed travel decisions based on real-time crime data and community reports.
+SafeSide Lahore is a full-stack web application designed to enhance **women’s safety in Pakistan** by providing real-time incident reports, safe route navigation, and reporting unsafe incidents. This app empowers users to make informed travel decisions based on real-time crime data and community reports.
 
 ---
 
 ## 🌐 Live Demo
 
-**[SafeSide Lahore](https://safeside-app-latest.onrender.com/)**   _(Best viewed on mobile with location permissions enabled)_
+**[SafeSide Lahore](https://safeside-lahore.onrender.com/)**   _(Best viewed on mobile with location permissions enabled)_
 
 ---
 
